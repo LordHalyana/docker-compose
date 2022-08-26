@@ -1,0 +1,72 @@
+version: "2"
+services:
+  # - Bazarr is a Subtitle Movie collection maintainer docker container *might need opensubtitles account*
+  bazarr:
+    image: linuxserver/bazarr:latest
+    container_name: bazarr
+    restart: unless-stopped
+    environment:
+      - UMASK_SET # Control permissions of files and directories created by Bazarr
+      - TZ # Specify a timezone to use EG Europe/London.
+      - PUID # ID of user to take ownership of application/files
+      - PGID # GID of user to take ownership of application/files
+    volumes:
+      - /host/path/to/tv:/tv # Location of your TV Shows
+      - /host/path/to/movies:/movies # Location of your movies
+      - /host/path/to/config:/config # Bazarr data
+    ports:
+      - 6767:6767/tcp # Allows HTTP access to the internal webserver.
+
+  # - Radarr is a Movie collection maintainer and finder docker container
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      - UMASK_SET=022 # control permissions of files and directories created by Radarr
+      - TZ=Europe/London # Specify a timezone to use EG Europe/London, this is required for Radarr
+      - PUID=1000 # for UserID
+      - PGID=1000 # for GroupID
+    volumes:
+      - /host/path/to/movies:/movies # Location of Movie library on disk (See note in Application setup)
+      - /host/path/to/downloads:/downloads # Location of download managers output directory (See note in Application setup)
+      - /host/path/to/config:/config # Database and Radarr configs
+    ports:
+      - 7878:7878/tcp # The port for the Radarr webinterface
+  
+  # - Sonarr is a TV Show collection maintainer and finder docker container
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      - TZ=Europe/London # Specify a timezone to use
+      - PUID=1000 # User ID to run as
+      - PGID=1000 # Group ID to run as
+    volumes:
+      - /host/path/to/data:/data # Location of all your media
+      - /host/path/to/config:/config # Contains all relevant configuration files.
+    ports:
+      - 8989:8989/tcp # Web UI
+
+  # - Prowlarr is a service that connects the other Arrr services to Torrent networks to find the torrent files
+  prowlarr:
+    image: linuxserver/prowlarr:0.4.5-nightly
+    container_name: prowlarr
+    restart: no
+
+  # - Plex is a media server that allows you to stream your media to your TV or computer or stream to web
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - VERSION=docker
+      - PLEX_CLAIM= #optional
+    volumes:
+      - /path/to/library:/config
+      - /path/to/tvseries:/tv
+      - /path/to/movies:/movies
+    restart: unless-stopped
