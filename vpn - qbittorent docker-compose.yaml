@@ -1,0 +1,28 @@
+#torrent stack
+version: "3.7"
+services:
+    vpn:
+        image: ghcr.io/bubuntux/nordlynx:latest
+        cap_add:
+           - NET_ADMIN #required
+        container_name: nordlynx
+        environment:
+           - PRIVATE_KEY= #required
+           - QUERY=filters\[country_id\]=209 #Switzerland
+           - NET_LOCAL=192.168.1.0/24  # So it can be accessed within the local network
+           - ALLOWED_IPS=0.0.0.0/0
+        ports:
+           - 8080:8080
+           - 8118:8118
+        sysctls:
+           - net.ipv6.conf.all.disable_ipv6=0
+        restart: unless-stopped
+    torrent:
+        container_name: qbittorrent
+        image: lscr.io/linuxserver/qbittorrent
+        network_mode: service:vpn
+        depends_on:
+           - vpn
+        volumes:
+          - /home/qbittorent:/config
+          - /home/Downloads:/downloads 
